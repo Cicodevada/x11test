@@ -4,7 +4,7 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const { homedir } = require('os');
 const { stdout } = require('process');
-const { createCanvas } = require('canvas');
+const { PNG } = require('pngjs');
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -50,7 +50,7 @@ function findIcon(windowId) {
     exec(`xprop -id ${windowId}`, (error, stdout) => {
       if (error) {
         console.error(`Erro ao executar xprop: ${error.message}`);
-        resolve('default.png'); // Ícone padrão em caso de erro
+        resolve('default.png'); // Retorna um ícone padrão em caso de erro
         return;
       }
 
@@ -70,27 +70,25 @@ function findIcon(windowId) {
       }
 
       const iconData = match[1].split(',').map(value => parseInt(value.trim(), 10));
-
       if (iconData.length === 0) {
         console.warn(`Nenhum dado de ícone processável para a janela ${windowId}`);
         resolve('default.png');
         return;
       }
 
-      // Converter os dados do ícone para uma imagem base64
-      const base64Icon = createIconImage(iconData);
-      resolve(base64Icon || 'default.png'); // Retorna Base64 ou ícone padrão
+      // Converter os dados do ícone para PNG e retornar o caminho ou Base64
+      const pngPath = saveIconAsPng(iconData, windowId);
+      resolve(pngPath);
     });
   });
 }
 
-function createIconImage(iconData) {
+function saveIconAsPng(iconData, windowId) {
   try {
     const [width, height, ...pixels] = iconData;
 
-    const canvas = createCanvas(width, height);
-    const ctx = canvas.getContext('2d');
-    const imageData = ctx.createImageData(width, height);
+    // Criar uma nova imagem PNG
+    const png = new PNG({ width, height });
 
     for (let i = 0; i < pixels.length; i++) {
       const pixel = pixels[i];
@@ -99,20 +97,21 @@ function createIconImage(iconData) {
       const b = pixel & 0xff;
       const a = (pixel >> 24) & 0xff;
 
-      const index = i * 4;
-      imageData.data[index] = r;
-      imageData.data[index + 1] = g;
-      imageData.data[index + 2] = b;
-      imageData.data[index + 3] = a;
+      const idx = i * 4;
+      png.data[idx] = r; // Red
+      png.data[idx + 1] = g; // Green
+      png.data[idx + 2] = b; // Blue
+      png.data[idx + 3] = a; // Alpha
     }
 
-    ctx.putImageData(imageData, 0, 0);
+    const iconPath = path.join(__dirname, `${windowId}.png`);
+    png.pack().pipe(fs.createWriteStream(iconPath));
 
-    // Retornar a imagem como base64
-    return canvas.toDataURL();
+    console.log(`Ícone salvo em ${iconPath}`);
+    return iconPath; // Caminho do PNG
   } catch (error) {
-    console.error(`Erro ao processar dados de ícone: ${error.message}`);
-    return null; // Retorna nulo se falhar
+    console.error(`Erro ao salvar o ícone: ${error.message}`);
+    return 'default.png'; // Retorna um ícone padrão se falhar
   }
 }
 
