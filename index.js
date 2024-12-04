@@ -52,7 +52,7 @@ function findIcon(appName) {
         return;
       }
   });
-
+  console.log(stdout);
   // Default icon if not found
   return 'default.png';
 }
