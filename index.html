@@ -22,29 +22,32 @@
         const { ipcRenderer } = require('electron');
 
         async function loadWindows() {
-    const windows = await ipcRenderer.invoke('get-windows');
-    const appList = document.getElementById('app-list');
-    appList.innerHTML = '';
+            const windows = await ipcRenderer.invoke('get-windows');
+            const appList = document.getElementById('app-list');
+            appList.innerHTML = '';
 
-    windows.forEach(win => {
-        const li = document.createElement('li');
-        
-        const img = document.createElement('img');
-        img.src = win.icon || 'default-icon.png'; // Ícone padrão caso não seja encontrado
-        
-        const span = document.createElement('span');
-        span.textContent = win.name + win.windowId;
+            windows.forEach(win => {
+                const li = document.createElement('li');
+                
+                const img = document.createElement('img');
+                img.src = win.iconPath || 'default-icon.png'; // Ícone padrão se não encontrado
+                
+                const span = document.createElement('span');
+                span.textContent = win.name;
 
-        li.appendChild(img);
-        li.appendChild(span);
-        
-        li.addEventListener('click', () => {
-            ipcRenderer.send('focus-window', win.windowId);
-        });
+                li.appendChild(img);
+                li.appendChild(span);
+                
+                li.addEventListener('click', () => {
+                    ipcRenderer.send('focus-window', win.windowId);
+                });
 
-        appList.appendChild(li);
-    });
-}
+                appList.appendChild(li);
+            });
+        }
+
+        loadWindows();
+
 
 
         loadWindows();
