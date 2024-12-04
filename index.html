@@ -11,11 +11,19 @@
     }
     .window-btn {
       margin: 0 5px;
-      padding: 5px 10px;
+      padding: 5px;
       background: rgba(255,255,255,0.2);
       border: none;
       color: white;
       cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .window-btn img {
+      width: 32px;
+      height: 32px;
+      margin-bottom: 5px;
     }
   </style>
 </head>
@@ -32,14 +40,24 @@
       windows.forEach(win => {
         const btn = document.createElement('button');
         btn.className = 'window-btn';
-        btn.textContent = win.title;
+        
+        if (win.icon) {
+          const icon = document.createElement('img');
+          icon.src = win.icon;
+          btn.appendChild(icon);
+        }
+        
+        const title = document.createElement('span');
+        title.textContent = win.title;
+        btn.appendChild(title);
+        
         btn.onclick = () => ipcRenderer.send('activate-window', win.id);
         container.appendChild(btn);
       });
     }
 
     updateWindows();
-    setInterval(updateWindows, 5000);
+    setInterval(updateWindows, 500);
   </script>
 </body>
 </html>
