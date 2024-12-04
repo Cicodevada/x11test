@@ -50,6 +50,7 @@ function findIcon(appName) {
         reject(error);
         return;
       }
+      console.log(`find /usr/share/icons -name "${appName}*.png" -o -name "${appName}*.svg" 2>/dev/null`);
       console.log(stdout);
   });
 
