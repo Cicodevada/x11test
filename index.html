@@ -1,68 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt">
 <head>
-  <title>XFCE Taskbar</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taskbar</title>
   <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      margin: 0; 
-      padding: 10px; 
-      background: #f0f0f0; 
-    }
-    .window-list {
-      list-style-type: none;
-      padding: 0;
-    }
-    .window-item {
-      background: white;
-      margin: 5px 0;
-      padding: 10px;
-      border-radius: 5px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    body {
       display: flex;
-      justify-content: space-between;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      margin: 0;
+      padding: 0;
+      height: 100%;
     }
-    .window-actions button {
-      margin-left: 5px;
-      background: #e0e0e0;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 3px;
+    .app-button {
+      padding: 10px;
+      margin: 0 5px;
+      background-color: rgba(255, 255, 255, 0.2);
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .app-button:hover {
+      background-color: rgba(255, 255, 255, 0.4);
     }
   </style>
 </head>
 <body>
-  <h2>Active Windows</h2>
-  <ul id="windowList" class="window-list"></ul>
+  <div id="taskbar">
+    <!-- Os ícones dos aplicativos abertos serão listados aqui -->
+  </div>
 
-  <script>
-    const { ipcRenderer } = require('electron')
-
-    ipcRenderer.on('update-windows', (event, windows) => {
-      const windowList = document.getElementById('windowList')
-      windowList.innerHTML = ''
-
-      windows.forEach(window => {
-        const li = document.createElement('li')
-        li.className = 'window-item'
-        li.innerHTML = `
-          <span>${window.name}</span>
-          <div class="window-actions">
-            <button onclick="focusWindow(${window.id})">Focus</button>
-            <button onclick="closeWindow(${window.id})">Close</button>
-          </div>
-        `
-        windowList.appendChild(li)
-      })
-    })
-
-    function focusWindow(windowId) {
-      // Implementar foco na janela
-    }
-
-    function closeWindow(windowId) {
-      // Implementar fechamento da janela
-    }
-  </script>
+  <script src="renderer.js"></script>
 </body>
 </html>

@@ -1,76 +1,57 @@
-const { app, BrowserWindow, ipcMain } = require('electron')
-const { exec } = require('child_process')
-const x11 = require('x11')
+const { app, BrowserWindow, Tray, Menu, ipcMain } = require('electron');
+const path = require('path');
+const os = require('os');
 
-class WindowManager {
-  constructor() {
-    this.activeWindows = new Map()
-  }
+let tray = null;
+let taskbarWindow = null;
 
-  async initialize() {
-    return new Promise((resolve, reject) => {
-      x11.createClient((err, display) => {
-        if (err) reject(err)
-        this.X = display.client
-        this.root = display.screen[0].root
-        this.setupWindowTracking()
-        resolve()
-      })
-    })
-  }
-
-  setupWindowTracking() {
-    this.X.ListWindows(this.root, (windows) => {
-      windows.forEach(window => this.trackWindow(window))
-    })
-
-    // Eventos de criação/destruição de janelas
-    this.X.on('MapNotify', (ev) => this.trackWindow(ev.window))
-    this.X.on('UnmapNotify', (ev) => this.removeWindow(ev.window))
-  }
-
-  trackWindow(windowId) {
-    this.X.GetWindowAttributes(windowId, (attrs) => {
-      this.X.GetWindowName(windowId, (name) => {
-        this.activeWindows.set(windowId, {
-          id: windowId,
-          name: name || 'Unnamed Window',
-          class: attrs.class || 'Unknown'
-        })
-      })
-    })
-  }
-
-  removeWindow(windowId) {
-    this.activeWindows.delete(windowId)
-  }
-
-  getActiveWindows() {
-    return Array.from(this.activeWindows.values())
-  }
-}
-
-function createMainWindow(windowManager) {
-  const mainWindow = new BrowserWindow({
-    width: 300,
-    height: 600,
+function createWindow() {
+  taskbarWindow = new BrowserWindow({
+    width: 800,
+    height: 60,
+    frame: false,  // sem borda, apenas a barra
+    x: 0,
+    y: os.platform() === 'win32' ? 0 : 1080, // Posição inicial da taskbar (ajuste se necessário)
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,  // Não aparece na taskbar padrão do sistema
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false
+      contextIsolation: false,
     }
-  })
+  });
 
-  mainWindow.loadFile('index.html')
+  taskbarWindow.loadFile('index.html');
 
-  // Atualizar lista de janelas periodicamente
-  setInterval(() => {
-    const windows = windowManager.getActiveWindows()
-    mainWindow.webContents.send('update-windows', windows)
-  }, 2000)
+  // Mostrar a taskbar no topo da tela (modo fixo)
+  taskbarWindow.setVisibleOnAllWorkspaces(true);
+  taskbarWindow.setPosition(0, 0, false);
+
+  // Quando a janela for fechada, destruir a instância
+  taskbarWindow.on('closed', () => {
+    taskbarWindow = null;
+  });
 }
 
-app.whenReady().then(async () => {
-  const windowManager = new WindowManager()
-  await windowManager.initialize()
-  createMainWindow(windowManager)
-})
+app.whenReady().then(() => {
+  createWindow();
+
+  // Criar um ícone da tray (no sistema)
+  tray = new Tray(path.join(__dirname, 'tray-icon.png'));
+  const contextMenu = Menu.buildFromTemplate([
+    { label: 'Fechar Taskbar', click: () => { app.quit(); } },
+  ]);
+  tray.setContextMenu(contextMenu);
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
