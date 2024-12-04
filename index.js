@@ -1,52 +1,49 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
+const fs = require('fs');
 
 function createWindow() {
-  const mainWindow = new BrowserWindow({
-    width: 300,
-    height: 600,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
-    }
+  const mainWindow = new BrowserWindow({ 
+    width: 300, 
+    height: 600, 
+    webPreferences: { 
+      nodeIntegration: true, 
+      contextIsolation: false 
+    } 
   });
-
   mainWindow.loadFile('index.html');
 }
 
-function getIconPath(windowId) {
-  return new Promise((resolve) => {
-    exec(`xprop -id ${windowId} _NET_WM_PID`, (err, stdout) => {
-      if (err || !stdout) {
-        resolve(null);
+function getWindowIcon(windowId) {
+  return new Promise((resolve, reject) => {
+    // Tenta obter o ícone do aplicativo usando várias estratégias
+    exec(`xprop -id ${windowId} _NET_WM_ICON_NAME`, (error, stdout) => {
+      if (error) {
+        resolve('default-icon.png');
         return;
       }
+      
+      // Extrai o nome do aplicativo para buscar o ícone
+      const appName = stdout.trim().split('=')[1].replace(/"/g, '').toLowerCase();
+      
+      // Lista de possíveis locais de ícones no Linux
+      const iconPaths = [
+        `/usr/share/pixmaps/${appName}.png`,
+        `/usr/share/icons/hicolor/48x48/apps/${appName}.png`,
+        `/usr/share/icons/hicolor/256x256/apps/${appName}.png`,
+        `/usr/share/icons/gnome/48x48/apps/${appName}.png`
+      ];
 
-      const pid = stdout.split(' ').pop().trim();
-      exec(`ps -p ${pid} -o comm=`, (err, stdout) => {
-        if (err || !stdout) {
-          resolve(null);
+      // Encontra o primeiro ícone existente
+      for (let iconPath of iconPaths) {
+        if (fs.existsSync(iconPath)) {
+          resolve(iconPath);
           return;
         }
+      }
 
-        const binaryName = stdout.trim();
-        const desktopFilePath = `/usr/share/applications/${binaryName}.desktop`;
-
-        if (fs.existsSync(desktopFilePath)) {
-          const desktopContent = fs.readFileSync(desktopFilePath, 'utf8');
-          const iconMatch = desktopContent.match(/Icon=(.+)/);
-
-          if (iconMatch && iconMatch[1]) {
-            const iconPath = iconMatch[1].trim();
-            resolve(iconPath.startsWith('/') ? iconPath : `/usr/share/icons/${iconPath}.png`);
-          } else {
-            resolve(null);
-          }
-        } else {
-          resolve(null);
-        }
-      });
+      resolve('default-icon.png');
     });
   });
 }
@@ -58,23 +55,23 @@ function listOpenWindows() {
         reject(error);
         return;
       }
-
-      const windows = stdout.split('\n')
+      
+      const windowPromises = stdout.split('\n')
         .filter(line => line.trim() !== '')
-        .map(line => {
+        .map(async line => {
           const parts = line.split(/\s+/);
           const windowId = parts[0];
           const desktop = parts[1];
           const pid = parts[2];
           const name = parts.slice(3).join(' ');
-
-          return { windowId, desktop, pid, name };
+          
+          // Busca o ícone para cada janela
+          const icon = await getWindowIcon(windowId);
+          
+          return { windowId, desktop, pid, name, icon };
         });
 
-      for (const win of windows) {
-        win.icon = await getIconPath(win.windowId);
-      }
-
+      const windows = await Promise.all(windowPromises);
       resolve(windows);
     });
   });
@@ -93,3 +90,5 @@ ipcMain.handle('get-windows', async () => {
 ipcMain.on('focus-window', (event, windowId) => {
   focusWindow(windowId);
 });
+
+// index.html permanece o mesmo do exemplo anterior
