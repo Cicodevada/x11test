@@ -1,70 +1,68 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>X11 Integration Demo</title>
+  <title>XFCE Taskbar</title>
   <style>
-    .x11-container {
-      width: 800px;
-      height: 600px;
-      border: 2px solid #333;
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 0; 
+      padding: 10px; 
+      background: #f0f0f0; 
+    }
+    .window-list {
+      list-style-type: none;
+      padding: 0;
+    }
+    .window-item {
+      background: white;
+      margin: 5px 0;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+    }
+    .window-actions button {
+      margin-left: 5px;
+      background: #e0e0e0;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 3px;
     }
   </style>
 </head>
 <body>
-  <h1>X11 App Integration Methods</h1>
-
-  <!-- Método 1: WebView -->
-  <div>
-    <h2>WebView Nautilus</h2>
-    <webview 
-      id="nautilus-webview" 
-      class="x11-container" 
-      src="about:blank">
-    </webview>
-  </div>
-
-  <!-- Método 2: X11 Bridge Container -->
-  <div>
-    <h2>X11 Bridge Container</h2>
-    <div id="x11-bridge-container" class="x11-container">
-      <!-- Conteúdo será inserido dinamicamente -->
-    </div>
-  </div>
-
-  <!-- Método 3: Xpra iframe -->
-  <div>
-    <h2>Xpra Iframe</h2>
-    <iframe 
-      id="xpra-iframe" 
-      class="x11-container" 
-      src="http://localhost:10000">
-    </iframe>
-  </div>
+  <h2>Active Windows</h2>
+  <ul id="windowList" class="window-list"></ul>
 
   <script>
     const { ipcRenderer } = require('electron')
 
-    // Tratamento WebView
-    document.getElementById('launch-webview').addEventListener('click', () => {
-      ipcRenderer.send('launch-webview-nautilus')
+    ipcRenderer.on('update-windows', (event, windows) => {
+      const windowList = document.getElementById('windowList')
+      windowList.innerHTML = ''
+
+      windows.forEach(window => {
+        const li = document.createElement('li')
+        li.className = 'window-item'
+        li.innerHTML = `
+          <span>${window.name}</span>
+          <div class="window-actions">
+            <button onclick="focusWindow(${window.id})">Focus</button>
+            <button onclick="closeWindow(${window.id})">Close</button>
+          </div>
+        `
+        windowList.appendChild(li)
+      })
     })
 
-    ipcRenderer.on('nautilus-output', (event, output) => {
-      console.log('Nautilus WebView Output:', output)
-    })
+    function focusWindow(windowId) {
+      // Implementar foco na janela
+    }
 
-    // Tratamento X11 Bridge
-    ipcRenderer.send('launch-x11-bridge')
-    ipcRenderer.on('x11-bridge-ready', (event, windowId) => {
-      const container = document.getElementById('x11-bridge-container')
-      container.setAttribute('data-window-id', windowId)
-    })
-
-    // Tratamento Xpra
-    ipcRenderer.send('launch-xpra-iframe')
-    ipcRenderer.on('xpra-status', (event, status) => {
-      console.log('Xpra Status:', status)
-    })
+    function closeWindow(windowId) {
+      // Implementar fechamento da janela
+    }
   </script>
 </body>
 </html>
