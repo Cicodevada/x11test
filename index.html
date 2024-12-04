@@ -8,32 +8,21 @@
       align-items: center;
       padding: 10px;
       color: white;
-      max-width: 100%;
-      overflow-x: auto;
-    }
-    #windows-container {
-      display: flex;
-      align-items: center;
     }
     .window-btn {
       margin: 0 5px;
-      padding: 5px;
+      padding: 5px 10px;
       background: rgba(255,255,255,0.2);
       border: none;
       color: white;
       cursor: pointer;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      max-width: 100px;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      overflow: hidden;
     }
     .window-btn img {
-      width: 32px;
-      height: 32px;
-      margin-bottom: 5px;
+      width: 20px;
+      height: 20px;
+      margin-right: 5px;
     }
   </style>
 </head>
@@ -50,17 +39,13 @@
       windows.forEach(win => {
         const btn = document.createElement('button');
         btn.className = 'window-btn';
+
+        // Create an img element for the window's icon
+        const img = document.createElement('img');
+        img.src = win.icon;  // Placeholder icon, replace with real icon if possible
+        btn.appendChild(img);
         
-        if (win.icon) {
-          const icon = document.createElement('img');
-          icon.src = win.icon;
-          btn.appendChild(icon);
-        }
-        
-        const title = document.createElement('span');
-        title.textContent = win.title;
-        btn.appendChild(title);
-        
+        btn.textContent = win.title;
         btn.onclick = () => ipcRenderer.send('activate-window', win.id);
         container.appendChild(btn);
       });
