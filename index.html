@@ -1,58 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <style>
-    body { 
-      background: rgba(0,0,0,0.5); 
-      display: flex;
-      align-items: center;
-      padding: 10px;
-      color: white;
-    }
-    .window-btn {
-      margin: 0 5px;
-      padding: 5px 10px;
-      background: rgba(255,255,255,0.2);
-      border: none;
-      color: white;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-    }
-    .window-btn img {
-      width: 20px;
-      height: 20px;
-      margin-right: 5px;
-    }
-  </style>
+    <style>
+        body { font-family: Arial; margin: 0; padding: 0; }
+        #app-list { list-style: none; padding: 0; }
+        #app-list li { 
+            display: flex; 
+            align-items: center; 
+            padding: 10px; 
+            cursor: pointer; 
+            border-bottom: 1px solid #ddd;
+        }
+        #app-list li:hover { background-color: #f0f0f0; }
+        #app-list img { margin-right: 10px; width: 32px; height: 32px; }
+    </style>
 </head>
 <body>
-  <div id="windows-container"></div>
-  <script>
-    const { ipcRenderer } = require('electron');
+    <ul id="app-list"></ul>
 
-    async function updateWindows() {
-      const container = document.getElementById('windows-container');
-      const windows = await ipcRenderer.invoke('get-windows');
-      
-      container.innerHTML = '';
-      windows.forEach(win => {
-        const btn = document.createElement('button');
-        btn.className = 'window-btn';
+    <script>
+        const { ipcRenderer } = require('electron');
 
-        // Cria um elemento de imagem para o ícone da janela
-        const img = document.createElement('img');
-        img.src = win.icon;  // Usa o ícone da janela obtido do backend
-        btn.appendChild(img);
-        
-        btn.textContent = win.title;
-        btn.onclick = () => ipcRenderer.send('activate-window', win.id);
-        container.appendChild(btn);
-      });
-    }
+        async function loadWindows() {
+            const windows = await ipcRenderer.invoke('get-windows');
+            const appList = document.getElementById('app-list');
+            appList.innerHTML = '';
 
-    updateWindows();
-    setInterval(updateWindows, 5000);
-  </script>
+            windows.forEach(win => {
+                const li = document.createElement('li');
+                
+                const img = document.createElement('img');
+                img.src = `icon.png`; // Substitua por lógica de ícone real
+                
+                const span = document.createElement('span');
+                span.textContent = win.name;
+
+                li.appendChild(img);
+                li.appendChild(span);
+                
+                li.addEventListener('click', () => {
+                    ipcRenderer.send('focus-window', win.windowId);
+                });
+
+                appList.appendChild(li);
+            });
+        }
+
+        loadWindows();
+    </script>
 </body>
 </html>
