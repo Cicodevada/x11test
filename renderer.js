@@ -3,29 +3,23 @@ const { ipcRenderer } = require('electron');
 document.addEventListener('DOMContentLoaded', () => {
   const taskbar = document.getElementById('taskbar');
 
-  // Função para listar os aplicativos abertos (exemplo)
-  function listApps() {
-    const apps = [
-      { id: 1, name: 'Terminal', icon: 'terminal.png' },
-      { id: 2, name: 'Editor', icon: 'editor.png' },
-      // Adicione mais aplicativos conforme necessário
-    ];
+  // Função para listar os aplicativos ativos
+  ipcRenderer.on('update-processes', (event, processList) => {
+    taskbar.innerHTML = ''; // Limpa a taskbar
 
-    taskbar.innerHTML = ''; // Limpar a taskbar antes de adicionar os ícones
-
-    apps.forEach(app => {
+    processList.forEach((process) => {
       const appButton = document.createElement('div');
       appButton.classList.add('app-button');
-      appButton.innerHTML = `<img src="${app.icon}" alt="${app.name}" /> ${app.name}`;
+      appButton.innerText = process.command; // Nome do processo (pode mudar conforme necessário)
 
       appButton.addEventListener('click', () => {
-        console.log(`Focando no aplicativo ${app.name}`);
-        // Enviar comando para o main process para focar o app específico
+        // Lógica para alternar o foco da janela, se possível
+        console.log(`Focando no aplicativo: ${process.command}`);
+        // Aqui, seria necessário usar uma ferramenta de controle de janela (como wmctrl ou similar)
+        // para dar foco à janela do processo clicado, mas isso depende do sistema.
       });
 
       taskbar.appendChild(appButton);
     });
-  }
-
-  listApps(); // Chama a função de listagem inicial
+  });
 });

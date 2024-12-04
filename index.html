@@ -13,6 +13,12 @@
       padding: 0;
       height: 100%;
     }
+    #taskbar {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding: 5px;
+    }
     .app-button {
       padding: 10px;
       margin: 0 5px;
@@ -27,7 +33,7 @@
 </head>
 <body>
   <div id="taskbar">
-    <!-- Os ícones dos aplicativos abertos serão listados aqui -->
+    <!-- A taskbar será preenchida dinamicamente com os aplicativos -->
   </div>
 
   <script src="renderer.js"></script>

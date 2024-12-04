@@ -1,6 +1,7 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Tray, Menu } = require('electron');
 const path = require('path');
 const os = require('os');
+const ps = require('node-ps');  // Para interagir com os processos do sistema
 
 let tray = null;
 let taskbarWindow = null;
@@ -9,12 +10,10 @@ function createWindow() {
   taskbarWindow = new BrowserWindow({
     width: 800,
     height: 60,
-    frame: false,  // sem borda, apenas a barra
-    x: 0,
-    y: os.platform() === 'win32' ? 0 : 1080, // Posição inicial da taskbar (ajuste se necessário)
+    frame: false,
     transparent: true,
     alwaysOnTop: true,
-    skipTaskbar: true,  // Não aparece na taskbar padrão do sistema
+    skipTaskbar: true,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -22,21 +21,12 @@ function createWindow() {
   });
 
   taskbarWindow.loadFile('index.html');
-
-  // Mostrar a taskbar no topo da tela (modo fixo)
-  taskbarWindow.setVisibleOnAllWorkspaces(true);
-  taskbarWindow.setPosition(0, 0, false);
-
-  // Quando a janela for fechada, destruir a instância
-  taskbarWindow.on('closed', () => {
-    taskbarWindow = null;
-  });
 }
 
 app.whenReady().then(() => {
   createWindow();
 
-  // Criar um ícone da tray (no sistema)
+  // Ícone da tray
   tray = new Tray(path.join(__dirname, 'tray-icon.png'));
   const contextMenu = Menu.buildFromTemplate([
     { label: 'Fechar Taskbar', click: () => { app.quit(); } },
@@ -48,6 +38,14 @@ app.whenReady().then(() => {
       createWindow();
     }
   });
+  
+  // Listar aplicativos abertos
+  setInterval(() => {
+    ps.lookup({}, (err, processList) => {
+      if (err) return console.log(err);
+      taskbarWindow.webContents.send('update-processes', processList);
+    });
+  }, 1000); // Atualiza a lista a cada 1 segundo
 });
 
 app.on('window-all-closed', () => {
