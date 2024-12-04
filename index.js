@@ -32,6 +32,7 @@ function listOpenWindows() {
           const windowId = parts[0];
           const className = parts[2]; // e.g., "xfce4-terminal.Xfce4-terminal"
           const name = parts.slice(4).join(' '); // Window name
+          console.log(className.split('.')[0]);
           const iconPath = findIcon(className.split('.')[0]);
 
           return { windowId, className, name, iconPath };
