@@ -18,10 +18,10 @@ function createMainWindow() {
 }
 
 // Método 1: WebView Integration
-ipcMain.on('launch-webview-nautilus', (event) => {
-  const nautilus = spawn('nautilus', ['--browser'])
-  nautilus.stdout.on('data', (data) => {
-    event.reply('nautilus-output', data.toString())
+ipcMain.on('launch-webview-thunar', (event) => {
+  const thunar = spawn('thunar', ['--browser'])
+  thunar.stdout.on('data', (data) => {
+    event.reply('thunar-output', data.toString())
   })
 })
 
@@ -30,7 +30,7 @@ ipcMain.on('launch-x11-bridge', async (event) => {
   try {
     // Exemplo conceitual de como poderia ser um bridge de X11
     const x11Bridge = await import('electron-x11-bridge')
-    const window = x11Bridge.embedX11App('nautilus')
+    const window = x11Bridge.embedX11App('thunar')
     event.reply('x11-bridge-ready', window.id)
   } catch (error) {
     event.reply('x11-bridge-error', error.message)
@@ -43,7 +43,7 @@ ipcMain.on('launch-xpra-iframe', (event) => {
   const xpraProcess = spawn('xpra', [
     'start', 
     '--bind-tcp=0.0.0.0:10000', 
-    '--start-child=nautilus'
+    '--start-child=thunar'
   ])
 
   xpraProcess.stdout.on('data', (data) => {
