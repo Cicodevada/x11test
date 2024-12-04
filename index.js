@@ -14,7 +14,7 @@ function createDock() {
     }
   });
 
-  dock.loadFile('dock.html');
+  dock.loadFile('index.html');
   dock.setPosition(0, app.getScreen().getPrimaryDisplay().bounds.height - 80);
 }
 
