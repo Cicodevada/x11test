@@ -16,14 +16,32 @@ function createDock() {
   });
 
   dock.loadFile('index.html'); 
-  
+
   // Posicionar no fundo da tela
   dock.setPosition(0, app.getScreen().getPrimaryDisplay().bounds.height - 80);
 }
 
+// Função para pegar o ícone da janela
+function getWindowIcon(windowId) {
+  return new Promise((resolve, reject) => {
+    exec(`xprop -id ${windowId}`, (error, stdout) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      const iconMatch = stdout.match(/_NET_WM_ICON_NAME\(UTF8_STRING\) = "(.*)"/);
+      if (iconMatch && iconMatch[1]) {
+        resolve(iconMatch[1]);
+      } else {
+        resolve('default-icon.png'); // Se não encontrar o ícone, retorna um ícone padrão
+      }
+    });
+  });
+}
+
 function listRunningWindows() {
   return new Promise((resolve, reject) => {
-    exec('wmctrl -l', (error, stdout) => {
+    exec('wmctrl -l', async (error, stdout) => {
       if (error) {
         reject(error);
         return;
@@ -37,10 +55,16 @@ function listRunningWindows() {
             desktop: parts[1],
             pid: parts[2],
             title: parts.slice(4).join(' '),
-            icon: 'default-icon.png' // Placeholder for the icon
+            icon: 'default-icon.png' // Default icon initially
           };
           
-          // Optional: You could use 'xprop' or another tool to get window icon (this would require more code).
+          // Tenta buscar o ícone da janela usando o xprop
+          getWindowIcon(window.id).then(icon => {
+            window.icon = icon;
+          }).catch(() => {
+            window.icon = 'default-icon.png'; // Caso erro, usa o ícone padrão
+          });
+
           return window;
         });
       resolve(windows);

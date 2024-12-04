@@ -40,9 +40,9 @@
         const btn = document.createElement('button');
         btn.className = 'window-btn';
 
-        // Create an img element for the window's icon
+        // Cria um elemento de imagem para o ícone da janela
         const img = document.createElement('img');
-        img.src = win.icon;  // Placeholder icon, replace with real icon if possible
+        img.src = win.icon;  // Usa o ícone da janela obtido do backend
         btn.appendChild(img);
         
         btn.textContent = win.title;
