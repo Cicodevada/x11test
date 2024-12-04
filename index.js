@@ -54,7 +54,7 @@ function findIcon(appName) {
   });
 
   // Default icon if not found
-  return stdout.trim() || path.join(__dirname, 'default-icon.png');
+  return stdout;
 }
 
 function focusWindow(windowId) {
