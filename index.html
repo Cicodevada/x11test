@@ -30,7 +30,7 @@
                 const li = document.createElement('li');
                 
                 const img = document.createElement('img');
-                img.src = `icon.png`; // Substitua por lógica de ícone real
+                img.src = win.hasIcon ? `xprop-icon.png` : 'default-icon.png';
                 
                 const span = document.createElement('span');
                 span.textContent = win.name;
