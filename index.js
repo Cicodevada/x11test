@@ -66,3 +66,25 @@ function listOpenWindows() {
     });
   });
 }
+
+
+function focusWindow(windowId) {
+  exec(`wmctrl -i -a ${windowId}`);
+}
+
+app.whenReady().then(createWindow);
+
+ipcMain.handle('get-windows', async () => {
+  const windows = await listOpenWindows();
+  
+  const windowsWithIcons = await Promise.all(windows.map(async (window) => {
+    window.hasIcon = await getWindowIcon(window.windowId);
+    return window;
+  }));
+  
+  return windowsWithIcons;
+});
+
+ipcMain.on('focus-window', (event, windowId) => {
+  focusWindow(windowId);
+});
