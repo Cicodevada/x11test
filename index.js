@@ -1,6 +1,19 @@
-const { exec } = require('child_process');
-const fs = require('fs');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const { exec } = require('child_process');
+
+function createWindow() {
+  const mainWindow = new BrowserWindow({
+    width: 300,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
+
+  mainWindow.loadFile('index.html');
+}
 
 function getIconPath(windowId) {
   return new Promise((resolve) => {
@@ -67,7 +80,6 @@ function listOpenWindows() {
   });
 }
 
-
 function focusWindow(windowId) {
   exec(`wmctrl -i -a ${windowId}`);
 }
@@ -75,14 +87,7 @@ function focusWindow(windowId) {
 app.whenReady().then(createWindow);
 
 ipcMain.handle('get-windows', async () => {
-  const windows = await listOpenWindows();
-  
-  const windowsWithIcons = await Promise.all(windows.map(async (window) => {
-    window.hasIcon = await getWindowIcon(window.windowId);
-    return window;
-  }));
-  
-  return windowsWithIcons;
+  return await listOpenWindows();
 });
 
 ipcMain.on('focus-window', (event, windowId) => {
