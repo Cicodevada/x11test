@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>X11 Integration Demo</title>
+  <style>
+    .x11-container {
+      width: 800px;
+      height: 600px;
+      border: 2px solid #333;
+    }
+  </style>
+</head>
+<body>
+  <h1>X11 App Integration Methods</h1>
+
+  <!-- Método 1: WebView -->
+  <div>
+    <h2>WebView Nautilus</h2>
+    <webview 
+      id="nautilus-webview" 
+      class="x11-container" 
+      src="about:blank">
+    </webview>
+  </div>
+
+  <!-- Método 2: X11 Bridge Container -->
+  <div>
+    <h2>X11 Bridge Container</h2>
+    <div id="x11-bridge-container" class="x11-container">
+      <!-- Conteúdo será inserido dinamicamente -->
+    </div>
+  </div>
+
+  <!-- Método 3: Xpra iframe -->
+  <div>
+    <h2>Xpra Iframe</h2>
+    <iframe 
+      id="xpra-iframe" 
+      class="x11-container" 
+      src="http://localhost:10000">
+    </iframe>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron')
+
+    // Tratamento WebView
+    document.getElementById('launch-webview').addEventListener('click', () => {
+      ipcRenderer.send('launch-webview-nautilus')
+    })
+
+    ipcRenderer.on('nautilus-output', (event, output) => {
+      console.log('Nautilus WebView Output:', output)
+    })
+
+    // Tratamento X11 Bridge
+    ipcRenderer.send('launch-x11-bridge')
+    ipcRenderer.on('x11-bridge-ready', (event, windowId) => {
+      const container = document.getElementById('x11-bridge-container')
+      container.setAttribute('data-window-id', windowId)
+    })
+
+    // Tratamento Xpra
+    ipcRenderer.send('launch-xpra-iframe')
+    ipcRenderer.on('xpra-status', (event, status) => {
+      console.log('Xpra Status:', status)
+    })
+  </script>
+</body>
+</html>
