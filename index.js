@@ -4,6 +4,7 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const { homedir } = require('os');
 const { stdout } = require('process');
+const { createCanvas } = require('canvas');
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -44,17 +45,75 @@ function listOpenWindows() {
   });
 }
 
-function findIcon(appName) {
-
-    exec(`xprop -id ${appName}`, (error, stdout) => {
+function findIcon(windowId) {
+  return new Promise((resolve, reject) => {
+    exec(`xprop -id ${windowId}`, (error, stdout) => {
       if (error) {
-        reject(error);
+        console.error(`Erro ao executar xprop: ${error.message}`);
+        resolve('default.png'); // Ícone padrão em caso de erro
         return;
       }
+
+      // Procurar pela propriedade _NET_WM_ICON
+      const iconLine = stdout.split('\n').find(line => line.includes('_NET_WM_ICON'));
+      if (!iconLine) {
+        console.warn(`Nenhum ícone encontrado para a janela ${windowId}`);
+        resolve('default.png');
+        return;
+      }
+
+      const match = iconLine.match(/_NET_WM_ICON\(CARDINAL\) = (.+)/);
+      if (!match || !match[1]) {
+        console.warn(`Dados de ícone inválidos para a janela ${windowId}`);
+        resolve('default.png');
+        return;
+      }
+
+      const iconData = match[1].split(',').map(value => parseInt(value.trim(), 10));
+
+      if (iconData.length === 0) {
+        console.warn(`Nenhum dado de ícone processável para a janela ${windowId}`);
+        resolve('default.png');
+        return;
+      }
+
+      // Converter os dados do ícone para uma imagem base64
+      const base64Icon = createIconImage(iconData);
+      resolve(base64Icon || 'default.png'); // Retorna Base64 ou ícone padrão
+    });
   });
-  console.log(stdout);
-  // Default icon if not found
-  return 'default.png';
+}
+
+function createIconImage(iconData) {
+  try {
+    const [width, height, ...pixels] = iconData;
+
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.createImageData(width, height);
+
+    for (let i = 0; i < pixels.length; i++) {
+      const pixel = pixels[i];
+      const r = (pixel >> 16) & 0xff;
+      const g = (pixel >> 8) & 0xff;
+      const b = pixel & 0xff;
+      const a = (pixel >> 24) & 0xff;
+
+      const index = i * 4;
+      imageData.data[index] = r;
+      imageData.data[index + 1] = g;
+      imageData.data[index + 2] = b;
+      imageData.data[index + 3] = a;
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+
+    // Retornar a imagem como base64
+    return canvas.toDataURL();
+  } catch (error) {
+    console.error(`Erro ao processar dados de ícone: ${error.message}`);
+    return null; // Retorna nulo se falhar
+  }
 }
 
 function focusWindow(windowId) {
