@@ -44,20 +44,14 @@ function listOpenWindows() {
 }
 
 function findIcon(appName) {
-  const iconDirs = [
-    '/usr/share/icons/hicolor/48x48/apps',
-    '/usr/share/icons/hicolor/32x32/apps',
-    '/usr/share/icons/hicolor/16x16/apps',
-    `${homedir()}/.icons`,
-    `${homedir()}/.local/share/icons`
-  ];
 
-  for (const dir of iconDirs) {
-    const iconPath = path.join(dir, `${appName}.png`);
-    if (fs.existsSync(iconPath)) {
-      return iconPath;
-    }
-  }
+    exec(`find /usr/share/icons -name "${appName}*.png" -o -name "${appName}*.svg" 2>/dev/null`, (error, stdout) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      console.log(stdout);
+  });
 
   // Default icon if not found
   return path.join(__dirname, 'default-icon.png'); // Use um ícone padrão no projeto
