@@ -1,41 +1,45 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Taskbar</title>
   <style>
-    body {
+    body { 
+      background: rgba(0,0,0,0.5); 
       display: flex;
-      background-color: rgba(0, 0, 0, 0.7);
-      color: white;
-      margin: 0;
-      padding: 0;
-      height: 100%;
-    }
-    #taskbar {
-      display: flex;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      padding: 5px;
-    }
-    .app-button {
+      align-items: center;
       padding: 10px;
-      margin: 0 5px;
-      background-color: rgba(255, 255, 255, 0.2);
-      border-radius: 5px;
-      cursor: pointer;
+      color: white;
     }
-    .app-button:hover {
-      background-color: rgba(255, 255, 255, 0.4);
+    .window-btn {
+      margin: 0 5px;
+      padding: 5px 10px;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <div id="taskbar">
-    <!-- A taskbar será preenchida dinamicamente com os aplicativos -->
-  </div>
+  <div id="windows-container"></div>
+  <script>
+    const { ipcRenderer } = require('electron');
 
-  <script src="renderer.js"></script>
+    async function updateWindows() {
+      const container = document.getElementById('windows-container');
+      const windows = await ipcRenderer.invoke('get-windows');
+      
+      container.innerHTML = '';
+      windows.forEach(win => {
+        const btn = document.createElement('button');
+        btn.className = 'window-btn';
+        btn.textContent = win.title;
+        btn.onclick = () => ipcRenderer.send('activate-window', win.id);
+        container.appendChild(btn);
+      });
+    }
+
+    updateWindows();
+    setInterval(updateWindows, 5000);
+  </script>
 </body>
 </html>

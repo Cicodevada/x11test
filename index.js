@@ -1,52 +1,58 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const os = require('os');
-const ps = require('node-ps');  // Para interagir com os processos do sistema
+const { exec } = require('child_process');
 
-let tray = null;
-let taskbarWindow = null;
-
-function createWindow() {
-  taskbarWindow = new BrowserWindow({
+function createDock() {
+  const dock = new BrowserWindow({
     width: 800,
     height: 60,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
-    skipTaskbar: true,
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false,
+      contextIsolation: false
     }
   });
 
-  taskbarWindow.loadFile('index.html');
+  dock.loadFile('index.html');
+  
+  // Posicionar no fundo da tela
+  dock.setPosition(0, app.getScreen().getPrimaryDisplay().bounds.height - 80);
 }
 
-app.whenReady().then(() => {
-  createWindow();
-
-  // Ícone da tray
-  tray = new Tray(path.join(__dirname, 'tray-icon.png'));
-  const contextMenu = Menu.buildFromTemplate([
-    { label: 'Fechar Taskbar', click: () => { app.quit(); } },
-  ]);
-  tray.setContextMenu(contextMenu);
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
-  });
-  
-  // Listar aplicativos abertos
-  setInterval(() => {
-    ps.lookup({}, (err, processList) => {
-      if (err) return console.log(err);
-      taskbarWindow.webContents.send('update-processes', processList);
+function listRunningWindows() {
+  return new Promise((resolve, reject) => {
+    exec('wmctrl -l', (error, stdout) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      const windows = stdout.split('\n')
+        .filter(line => line.trim() !== '')
+        .map(line => {
+          const parts = line.split(/\s+/);
+          return {
+            id: parts[0],
+            desktop: parts[1],
+            pid: parts[2],
+            title: parts.slice(4).join(' ')
+          };
+        });
+      resolve(windows);
     });
-  }, 1000); // Atualiza a lista a cada 1 segundo
+  });
+}
+
+ipcMain.handle('get-windows', async () => {
+  return await listRunningWindows();
 });
+
+ipcMain.on('activate-window', (event, windowId) => {
+  exec(`wmctrl -i -a ${windowId}`);
+});
+
+app.whenReady().then(createDock);
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
