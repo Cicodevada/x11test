@@ -16,37 +16,66 @@ function createWindow() {
 }
 
 function getWindowIcon(windowId) {
-  return new Promise((resolve, reject) => {
-    exec(`xprop -id ${windowId}`, (error, stdout) => {
-      if (error) {
-        console.error('Error getting window icon:', error);
-        resolve('default-icon.png');
-        return;
+  return new Promise((resolve) => {
+    exec(`xprop -id ${windowId} _NET_WM_ICON`, (error, stdout) => {
+      if (!error && stdout.includes('_NET_WM_ICON')) {
+        // O ícone existe no próprio aplicativo
+        const tempIconPath = path.join(app.getPath('temp'), `window_icon_${windowId}.png`);
+        
+        // Script para extrair ícone com xseticon
+        const extractScript = `
+          xseticon -display $DISPLAY -id ${windowId} | convert - ${tempIconPath}
+        `;
+        
+        exec(extractScript, (extractError) => {
+          if (!extractError && fs.existsSync(tempIconPath)) {
+            resolve(tempIconPath);
+          } else {
+            resolve(getAlternativeIcon(windowId));
+          }
+        });
+      } else {
+        resolve(getAlternativeIcon(windowId));
       }
-      
-      // Extract class name which is often more reliable for icon matching
-      const classMatch = stdout.match(/WM_CLASS\(string\) = "([^"]+)"/);
-      const className = classMatch ? classMatch[1] : 'unknown';
-      
-      // More comprehensive icon path list
-      const iconPaths = [
-        `/usr/share/pixmaps/${className}.png`,
-        `/usr/share/icons/hicolor/48x48/apps/${className}.png`,
-        `/usr/share/icons/hicolor/256x256/apps/${className}.png`,
-        `/usr/share/icons/gnome/48x48/apps/${className}.png`
-      ];
-
-      // Find first existing icon
-      for (let iconPath of iconPaths) {
-        if (fs.existsSync(iconPath)) {
-          resolve(iconPath);
-          return;
-        }
-      }
-
-      resolve('default-icon.png');
     });
   });
+}
+
+function getAlternativeIcon(windowId) {
+  // Tenta recuperar ícone pelo nome da classe
+  const iconDirs = [
+    '/usr/share/pixmaps',
+    '/usr/share/icons/hicolor/48x48/apps',
+    '/usr/share/icons/hicolor/256x256/apps',
+    '/usr/share/icons/gnome/48x48/apps'
+  ];
+
+  try {
+    // Recupera classe do aplicativo
+    const classOutput = execSync(`xprop -id ${windowId} WM_CLASS`).toString();
+    const match = classOutput.match(/"([^"]+)"/);
+    
+    if (match) {
+      const appClass = match[1];
+      for (let dir of iconDirs) {
+        const possibleIcons = [
+          `${dir}/${appClass}.png`,
+          `${dir}/${appClass}.svg`,
+          `${dir}/${appClass}.xpm`
+        ];
+
+        for (let iconPath of possibleIcons) {
+          if (fs.existsSync(iconPath)) {
+            return iconPath;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao recuperar ícone alternativo:', err);
+  }
+
+  return 'default-icon.png';
 }
 
 function listOpenWindows() {
