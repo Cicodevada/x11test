@@ -33,7 +33,7 @@
         img.src = win.icon || 'default-icon.png'; // Ícone padrão caso não seja encontrado
         
         const span = document.createElement('span');
-        span.textContent = win.name;
+        span.textContent = win.name + win.windowId;
 
         li.appendChild(img);
         li.appendChild(span);
